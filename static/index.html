@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#7655d8" />
+    <title>TikTok Services | مركز الإدارة</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div id="auth" class="auth hidden">
+      <div class="auth-art">
+        <div class="brand-mark">♪</div>
+        <h1>نظام واحد.<br />كل شيء تحت سيطرتك.</h1>
+        <p>
+          إدارة خدماتك، عملائك، وبوت تيليجرام<br />من مساحة عمل واحدة متكاملة.
+        </p>
+        <div class="orbit">✦ <span>TikTok Services</span></div>
+      </div>
+      <form id="login" class="login">
+        <div class="eyebrow">TIKTOK SERVICES / CONTROL CENTER</div>
+        <h2 id="auth-title">مرحبًا بعودتك 👋</h2>
+        <p id="auth-sub">سجّل الدخول إلى مساحة الإدارة الخاصة بك.</p>
+        <label
+          >اسم المستخدم<input
+            name="username"
+            autocomplete="username"
+            required /></label
+        ><label
+          >كلمة المرور<input
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            required
+            minlength="12" /></label
+        ><label id="setup-secret" class="hidden"
+          >رمز تهيئة الخادم (إن تم ضبطه)<input
+            name="setup_secret"
+            type="password" /></label
+        ><button class="primary" type="submit">الدخول إلى لوحة التحكم ←</button>
+        <p id="auth-error" class="error"></p>
+        <small>جلسة محمية • صلاحيات مستقلة • سجل تدقيق موحد</small>
+      </form>
+    </div>
+    <div id="shell" class="hidden">
+      <aside id="sidebar">
+        <a class="brand" href="/"
+          ><span class="logo">♪</span
+          ><span
+            >TikTok<span class="brand-light"> Services</span
+            ><small>مركز التحكم والإدارة</small></span
+          ></a
+        >
+        <div class="workspace">
+          <span class="workspace-icon">◈</span>
+          <div>
+            <b id="workspace-name">مساحة العمل</b
+            ><small>منصة الخدمات المتكاملة</small>
+          </div>
+          <span class="live-dot"></span>
+        </div>
+        <div class="nav-label">مساحة الإدارة</div>
+        <nav id="nav"></nav>
+        <div class="sidebar-footer">
+          <span class="logo mini">✦</span><b>كل أدواتك في مكان واحد</b>
+          <p>تعديلاتك متزامنة مع البوت مباشرة</p>
+          <span class="version">SYSTEM V2.0</span>
+        </div>
+      </aside>
+      <main>
+        <header>
+          <div class="header-title">
+            <button id="mobile-menu" class="icon-btn">☰</button
+            ><span class="muted">مساحة العمل</span
+            ><span class="separator">/</span><b id="breadcrumb">نظرة عامة</b>
+          </div>
+          <div class="header-actions">
+            <span id="connection" class="connection">● غير متصل</span
+            ><button id="refresh" class="icon-btn" title="تحديث">↻</button>
+            <button
+              class="avatar"
+              id="avatar"
+              data-action="profile"
+              title="إعدادات حسابك"
+            >
+              م
+            </button>
+            <div class="identity">
+              <b id="actor-name"></b><small id="actor-role"></small>
+            </div>
+            <button id="logout" class="icon-btn" title="تسجيل الخروج">⇥</button>
+          </div>
+        </header>
+        <div class="content">
+          <div id="page-heading" class="page-heading"></div>
+          <section id="view"></section>
+          <footer>
+            صُمّم لإدارة أعمالك بوضوح <span>نظام موحّد • بيانات متزامنة</span>
+          </footer>
+        </div>
+      </main>
+    </div>
+    <dialog id="modal">
+      <div class="modal-head">
+        <h2 id="modal-title"></h2>
+        <button class="icon-btn" id="close-modal">✕</button>
+      </div>
+      <div id="modal-body"></div>
+    </dialog>
+    <div id="toast" role="status"></div>
+    <script src="/static/app.js" defer></script>
+    <script src="/static/studio.js" defer></script>
+  </body>
+</html>

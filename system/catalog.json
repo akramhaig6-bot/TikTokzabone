@@ -1,0 +1,321 @@
+{
+  "messages": {
+    "notification_balance": "💳 {reason}\nالمبلغ: ${delta}\nالرصيد الجديد: ${balance}\nLED-{id}",
+    "notification_order": "📦 تحديث TK-{id}\nالحالة: {status}\n{note}",
+    "notification_topup": "🧾 TOP-{id}\nالحالة: {status}\n{reason}",
+    "notification_stars_success": "✅ تم استلام الدفع بنجاح\n⭐ Telegram Stars\nالمبلغ: ${amount}\nالرصيد الجديد: ${balance}\n🧾 PAY-{id}",
+    "notification_support": "🎧 رد الدعم SUP-{id}\n{body}",
+    "notification_ticket_status": "🎧 SUP-{id}: {status}",
+    "order_review": "📋 مراجعة الطلب\n\n🛒 {service}\n🔗 {target}\n📦 الكمية: {quantity}\n💰 سعر كل 1000: ${unit_price}\n💰 السعر: ${price}\n💳 رصيدك: ${balance}\nالرصيد بعد الطلب: ${after}\n\nهل تريد تأكيد الطلب؟",
+    "topup_details": "🧾 TOP-{id}\nالمبلغ: ${amount}\nالطريقة: {method}\nالحالة: {status}\nالتاريخ: {created}\nسبب الرفض: {reason}\n{hint}",
+    "label_04593ec82427": "🏠 الرئيسية",
+    "list_service_row": "{name} — ${price}/1000",
+    "choose_language": "🌐 اختر اللغة",
+    "quantity_prompt": "✅ تم استلام الرابط.\n📦 أرسل الكمية كعدد صحيح.\nالحد الأدنى: {min} / الأعلى: {max}",
+    "label_363278e2643e": "✅ تأكيد الطلب",
+    "label_44229d941cec": "✏️ تعديل الرابط",
+    "label_d7fa61d5e268": "✏️ تعديل الكمية",
+    "label_a3453763de00": "💳 شحن الرصيد",
+    "label_300c21010f5f": "❌ إلغاء الطلب",
+    "list_ledger_row": "LED-{id} — ${amount} — {reason}",
+    "label_7d293365a5d5": "◀️ السابق",
+    "label_f606541972fe": "▶️ التالي",
+    "label_b1570bfa85de": "⏳ المعلقة",
+    "label_f179b69eb8bc": "✅ المكتملة",
+    "label_36d193326626": "❌ الملغاة",
+    "label_94eb3e5ccd93": "🔍 بحث",
+    "label_7814b933369f": "🔄 تحديث",
+    "label_9f7a98439641": "🎧 الدعم",
+    "label_d1a97bbbb3f6": "🔄 طلب شحن جديد",
+    "label_e35db8618031": "🎧 الاعتراض على الرفض",
+    "label_a2ff97d9947d": "❌ إلغاء",
+    "validation_error": "⚠️ {error}",
+    "label_5189341e67f3": "🔄 إعادة المحاولة",
+    "topup_review": "🧾 مراجعة الشحن\nالمبلغ: ${amount}\nالطريقة: {method}\nStars: {stars}\nهل تريد المتابعة؟",
+    "topup_amount_resume": "أرسل مبلغ الشحن لاستكمال العملية.",
+    "label_de8bd8369710": "🔄 استكمال الطلب",
+    "blocked": "🚫 حسابك غير قادر على استخدام هذه الخدمة. يرجى التواصل مع الدعم.",
+    "home": "أهلاً بك",
+    "resume_topup_draft": "💳 لديك شحن غير مكتمل محفوظ.",
+    "language_hint": "🌐",
+    "resume_draft": "📋 لديك طلب غير مكتمل محفوظ.",
+    "label_6dbf90575683": "✅ متابعة",
+    "label_b42b3ff54dd6": "✏️ تعديل",
+    "service_details": "🛒 {name}\n{description}\nالسعر لكل 1000: ${price}\nالحد الأدنى: {min}\nالحد الأعلى: {max}\n📌 أرسل رابط تيك توك.",
+    "label_021865528a63": "▶️ استكمال الشحن",
+    "label_43543707b253": "🌐 اللغة",
+    "label_5503b2b0215c": "▶️ استكمال الطلب",
+    "order_created": "✅ تم تسجيل الطلب TK-{id}\nالخدمة: {service}\nالكمية: {quantity}\nالحالة: قيد المراجعة\nالسعر: ${price}",
+    "label_c500fedbf4e2": "↩️ الخدمات",
+    "order_cancelled": "❌ تم إلغاء الطلب. لم يتم خصم أي مبلغ.",
+    "order_details": "📋 TK-{id}\nالخدمة: {service}\nالرابط: {target}\nالكمية: {quantity}\nالسعر: ${price}\nالحالة: {status}\nتاريخ الإنشاء: {created}\nملاحظات: {note}\nحركة الخصم: {debit}\nحركة الاسترداد: {refund}",
+    "order_history": "📋 سجل الطلب\n{history}",
+    "label_69d797171d52": "📋 تفاصيل الطلب",
+    "label_cb10e70f6eb4": "📋 طلباتي",
+    "label_b24af45692a3": "🔄 تحديث الحالة",
+    "cancel_confirmation": "⚠️ هل تريد إلغاء الطلب واسترداد المبلغ؟",
+    "label_b61877e951b1": "❌ طلب إلغاء",
+    "label_808325a3221c": "📄 تفاصيل الاسترداد",
+    "label_f31e6af30f1c": "📋 سجل الطلب",
+    "cancel_in_progress": "⚠️ لا يمكن إلغاء الطلب تلقائيًا بعد بدء التنفيذ.",
+    "label_c619e4bf762f": "↩️ الطلب",
+    "search_order_prompt": "أرسل رقم الطلب TK-00001",
+    "ledger_details": "💰 LED-{id}\nالمبلغ: ${delta}\nالسبب: {reason}\nقبل: ${before} / بعد: ${after}\nالمنفذ: {actor}\nالتاريخ: {created}",
+    "label_a6ddce381282": "✅ تأكيد الإلغاء",
+    "label_8e9155251fb4": "↩️ رجوع",
+    "account_details": "👤 حسابك الشخصي\nID: {id}\nUsername: @{username}\nتاريخ الانضمام: {created}\n💳 الرصيد: ${balance}\n📦 عدد الطلبات: {count}",
+    "label_82737f80459c": "🎧 طلب إلغاء من الدعم",
+    "label_0717dbe55698": "↩️ العودة",
+    "topup_amount": "أدخل مبلغ الشحن بالدولار.\nالحد الأدنى: ${min}\nالحد الأعلى: ${max}\nسعر Stars لكل دولار: {rate}",
+    "label_a51e23393009": "↩️ سجل الرصيد",
+    "label_d3c7906e1257": "💰 سجل الرصيد",
+    "label_c1b43b36df09": "$1",
+    "label_4879e9c95387": "$5",
+    "label_a5e5e8d362fb": "$10",
+    "label_1f67972ce8b9": "$20",
+    "invoice_waiting": "⭐ تم إنشاء الفاتورة. لم تتم إضافة الرصيد بعد.\nيمكنك مراجعة حالة الشحن أو إلغاء الفاتورة غير المدفوعة.",
+    "transfer_instructions": "🧾 TOP-{id}\nالمبلغ: ${amount}\n{instructions}\n\nأرسل صورة أو ملف إثبات أو رقم التحويل وملاحظة.",
+    "topup_draft_cancelled": "❌ تم إلغاء عملية الشحن. لم تتم إضافة أي مبلغ إلى رصيدك.",
+    "label_b793ddc029a0": "⭐ Telegram Stars",
+    "label_840860eb55a3": "🧾 شحن يدوي",
+    "label_a3ef5cf33246": "📋 طلبات الشحن",
+    "invoice_title": "شحن رصيد البوت",
+    "invoice_description": "إضافة ${amount} إلى رصيدك",
+    "ticket_new": "🎧 أرسل وصف المشكلة بالتفصيل.",
+    "ticket_details": "🎫 SUP-{id}\nالموضوع: {subject}\nالحالة: {status}\n\n{messages}",
+    "label_b8d1db1b0ea3": "📋 حالة الشحن",
+    "label_09dd23501dd2": "❌ إلغاء الدفع",
+    "ticket_reply_prompt": "✉️ أرسل رسالتك.",
+    "ticket_previous_page": "📄 صفحة رسائل سابقة",
+    "label_e0f0ca5e1e0b": "◀️ الأحدث",
+    "label_d905e15d9987": "▶️ الأقدم",
+    "label_87a818011a79": "💳 مشكلة شحن",
+    "label_4e281cbca8ff": "📦 مشكلة طلب",
+    "label_a920066c2aaf": "👤 مشكلة حساب",
+    "label_8bb1e0b15d3f": "❓ استفسار",
+    "label_c99ec1fcd3ad": "📋 تذاكري",
+    "ticket_close_confirm": "هل تريد إغلاق التذكرة؟",
+    "admin_web": "⚙️ تتم إدارة النظام من لوحة الويب. افتح عنوان اللوحة وسجل الدخول بحسابك المخصص.",
+    "label_5b38de4c39ef": "✉️ إرسال رسالة",
+    "label_12d8b19d76b1": "↩️ تذاكري",
+    "admin_web_link": "🌐 افتح لوحة التحكم",
+    "label_f27605b23d30": "✅ إغلاق",
+    "admin_web_button": "فتح لوحة الويب"
+  },
+  "layouts": {
+    "layout_order_review": [
+      [
+        {
+          "text": "✅ تأكيد الطلب",
+          "callback_data": "order_confirm"
+        }
+      ],
+      [
+        {
+          "text": "✏️ تعديل الرابط",
+          "callback_data": "edit_target"
+        },
+        {
+          "text": "✏️ تعديل الكمية",
+          "callback_data": "edit_qty"
+        }
+      ],
+      [
+        {
+          "text": "💳 شحن الرصيد",
+          "callback_data": "topup"
+        },
+        {
+          "text": "❌ إلغاء الطلب",
+          "callback_data": "cancel_order"
+        }
+      ]
+    ],
+    "layout_quantity": [
+      [
+        {
+          "text": "100",
+          "callback_data": "qty:100"
+        },
+        {
+          "text": "500",
+          "callback_data": "qty:500"
+        },
+        {
+          "text": "1000",
+          "callback_data": "qty:1000"
+        },
+        {
+          "text": "5000",
+          "callback_data": "qty:5000"
+        }
+      ],
+      [
+        {
+          "text": "✏️ تعديل الرابط",
+          "callback_data": "edit_target"
+        },
+        {
+          "text": "❌ إلغاء",
+          "callback_data": "cancel_order"
+        }
+      ],
+      [
+        {
+          "text": "🏠 الرئيسية",
+          "callback_data": "home"
+        }
+      ]
+    ],
+    "layout_topup_review": [
+      [
+        {
+          "text": "✅ متابعة",
+          "callback_data": "topup_go"
+        },
+        {
+          "text": "✏️ تعديل",
+          "callback_data": "edit_topup_amount"
+        }
+      ],
+      [
+        {
+          "text": "❌ إلغاء",
+          "callback_data": "cancel_topup_draft"
+        }
+      ],
+      [
+        {
+          "text": "🏠 الرئيسية",
+          "callback_data": "home"
+        }
+      ]
+    ],
+    "layout_service_details": [
+      [
+        {
+          "text": "↩️ الخدمات",
+          "callback_data": "services"
+        }
+      ],
+      [
+        {
+          "text": "🏠 الرئيسية",
+          "callback_data": "home"
+        }
+      ]
+    ],
+    "layout_account": [
+      [
+        {
+          "text": "💳 شحن الرصيد",
+          "callback_data": "topup"
+        },
+        {
+          "text": "📋 طلباتي",
+          "callback_data": "myorders"
+        }
+      ],
+      [
+        {
+          "text": "💰 سجل الرصيد",
+          "callback_data": "ledger"
+        },
+        {
+          "text": "🎧 الدعم",
+          "callback_data": "support"
+        }
+      ],
+      [
+        {
+          "text": "🏠 الرئيسية",
+          "callback_data": "home"
+        }
+      ]
+    ],
+    "layout_topup": [
+      [
+        {
+          "text": "⭐ Telegram Stars",
+          "callback_data": "newtopup:stars"
+        },
+        {
+          "text": "🧾 شحن يدوي",
+          "callback_data": "newtopup:manual"
+        }
+      ],
+      [
+        {
+          "text": "📋 طلبات الشحن",
+          "callback_data": "topups"
+        }
+      ],
+      [
+        {
+          "text": "🏠 الرئيسية",
+          "callback_data": "home"
+        }
+      ]
+    ],
+    "layout_topup_amount": [
+      [
+        {
+          "text": "$1",
+          "callback_data": "amount:1"
+        },
+        {
+          "text": "$5",
+          "callback_data": "amount:5"
+        },
+        {
+          "text": "$10",
+          "callback_data": "amount:10"
+        },
+        {
+          "text": "$20",
+          "callback_data": "amount:20"
+        }
+      ],
+      [
+        {
+          "text": "🏠 الرئيسية",
+          "callback_data": "home"
+        }
+      ]
+    ],
+    "layout_support": [
+      [
+        {
+          "text": "💳 مشكلة شحن",
+          "callback_data": "newticket:شحن"
+        },
+        {
+          "text": "📦 مشكلة طلب",
+          "callback_data": "newticket:طلب"
+        }
+      ],
+      [
+        {
+          "text": "👤 مشكلة حساب",
+          "callback_data": "newticket:حساب"
+        },
+        {
+          "text": "❓ استفسار",
+          "callback_data": "newticket:عام"
+        }
+      ],
+      [
+        {
+          "text": "📋 تذاكري",
+          "callback_data": "tickets"
+        }
+      ],
+      [
+        {
+          "text": "🏠 الرئيسية",
+          "callback_data": "home"
+        }
+      ]
+    ]
+  }
+}
