@@ -11,6 +11,12 @@ const stepNames = {
   condition: "شرط وتفرّع",
   end: "إنهاء التدفق",
 };
+const buttonStyleOptions = {
+  default: "Default — افتراضي",
+  primary: "Primary — أزرق",
+  success: "Success — أخضر",
+  danger: "Danger — أحمر",
+};
 function readFlowSteps() {
   return [...document.querySelectorAll(".flow-step")].map((el) => {
     const d = {};
@@ -21,6 +27,16 @@ function readFlowSteps() {
           ? Number(input.value)
           : input.value;
     });
+    if (d.validator === "choice") {
+      const count = d.choices ? String(d.choices).split("|").length : 0;
+      const selected = [...el.querySelectorAll("[data-choice-style]")].map(
+        (select) => select.value,
+      );
+      d.choice_styles = Array.from(
+        { length: count },
+        (_, i) => selected[i] || "default",
+      );
+    }
     return d;
   });
 }
@@ -71,8 +87,19 @@ function drawFlowEditor() {
       let body = "";
       if (["message", "input"].includes(s.type))
         body += `<label class="full">نص الرسالة / سؤال الإدخال<textarea data-step-field="text">${esc(s.text || "")}</textarea></label>`;
-      if (s.type === "input")
+      if (s.type === "input") {
         body += `<label>اسم المتغير<input data-step-field="variable" value="${esc(s.variable || "answer")}" pattern="[A-Za-z][A-Za-z0-9_]*" required></label><label>التحقق<select data-step-field="validator">${options({ text: "نص غير فارغ", integer: "عدد صحيح", decimal: "عدد عشري", tiktok: "رابط تيك توك", choice: "اختيار من قائمة" }, s.validator || "text")}</select></label><label>الحد الأدنى (للعدد)<input data-step-field="min" type="number" step="any" value="${esc(s.min ?? "")}"></label><label>الحد الأعلى (للعدد)<input data-step-field="max" type="number" step="any" value="${esc(s.max ?? "")}"></label><label class="full">الخيارات (افصل بينها بالعلامة |)<input data-step-field="choices" value="${esc(s.choices || "")}"></label>`;
+        if (s.validator === "choice") {
+          const choices = s.choices ? String(s.choices).split("|") : [];
+          const styles = Array.isArray(s.choice_styles) ? s.choice_styles : [];
+          body += `<div class="full"><p class="hint">لون كل زر اختيار في Telegram</p><div class="form-grid">${choices
+            .map(
+              (choice, index) =>
+                `<label>لون «${esc(choice || `خيار فارغ ${index + 1}`)}»<select data-choice-style="${index}">${options(buttonStyleOptions, styles[index] || "default")}</select></label>`,
+            )
+            .join("") || '<p class="hint">أضف خيارات مفصولة بعلامة | لتهيئة ألوانها.</p>'}</div></div>`;
+        }
+      }
       if (s.type === "menu")
         body += `<label class="full">القائمة<select data-step-field="target">${options(Object.fromEntries((boot.menus || []).map((m) => [m.key, m.name + " — " + m.key])), s.target)}</select></label>`;
       if (s.type === "action")
@@ -138,6 +165,18 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("change", (e) => {
   if (e.target.matches("[data-flow-type]")) {
+    flowDraft = readFlowSteps();
+    flowRecord = {
+      ...flowRecord,
+      name: $("#workflow-editor [name=name]").value,
+      enabled: $("#workflow-editor [name=enabled]").checked ? 1 : 0,
+    };
+    drawFlowEditor();
+  } else if (
+    e.target.matches(
+      '[data-step-field="validator"], [data-step-field="choices"]',
+    )
+  ) {
     flowDraft = readFlowSteps();
     flowRecord = {
       ...flowRecord,
