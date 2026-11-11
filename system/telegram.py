@@ -18,15 +18,37 @@ def call(token, method, data):
     try:
         with urllib.request.urlopen(req, timeout=40) as response:
             result = json.load(response)
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            raise RuntimeError("رفض Telegram التوكن (401). تحقق من توكن BotFather.") from None
+        if e.code == 409:
+            raise RuntimeError("تعارض Telegram (409): أوقف أي نسخة أو webhook آخر للبوت.") from None
+        if e.code == 429:
+            raise RuntimeError("Telegram يطلب الانتظار قبل إعادة المحاولة (429).") from None
+        raise RuntimeError(f"رفض Telegram الطلب (HTTP {e.code}).") from None
+    except (urllib.error.URLError, TimeoutError, OSError):
+        raise RuntimeError("تعذر الوصول إلى api.telegram.org من الخادم.") from None
     except Exception:
-        raise RuntimeError("تعذر الاتصال بخدمة Telegram") from None
-    if not result.get("ok"):
-        raise RuntimeError("رفض Telegram العملية المطلوبة")
+        raise RuntimeError("تعذر قراءة رد Telegram.") from None
+    if not isinstance(result, dict) or not result.get("ok"):
+        code = result.get("error_code") if isinstance(result, dict) else None
+        if code == 401:
+            raise RuntimeError("رفض Telegram التوكن (401). تحقق من توكن BotFather.")
+        if code == 409:
+            raise RuntimeError("تعارض Telegram (409): أوقف أي نسخة أو webhook آخر للبوت.")
+        if code == 429:
+            raise RuntimeError("Telegram يطلب الانتظار قبل إعادة المحاولة (429).")
+        raise RuntimeError(f"رفض Telegram الطلب{f' (رمز {code})' if code else ''}.")
     return result["result"]
 
 
 def b(label, action):
     return {"text": label, "callback_data": action}
+
+def button_style(button, style="default"):
+    if style in ("primary", "success", "danger"):
+        button["style"] = style
+    return button
 
 
 HOME = [[b("🏠 الرئيسية", "home")]]
@@ -91,11 +113,13 @@ def keyboard(c, uid, key, defaults=None, values=None):
         if "{" in target and btn["action"] != "message":
             continue
         if btn["kind"] == "url" and m["kind"] != "reply":
-            item = {"text": btn["label"], "url": target}
+            item = button_style({"text": btn["label"], "url": target}, btn["style"])
         elif btn["kind"] == "webapp":
-            item = {"text": btn["label"], "web_app": {"url": target}}
+            item = button_style(
+                {"text": btn["label"], "web_app": {"url": target}}, btn["style"]
+            )
         elif m["kind"] == "reply":
-            item = {"text": btn["label"]}
+            item = button_style({"text": btn["label"]}, btn["style"])
         else:
             if values and any("{" + k + "}" in btn["target"] for k in values):
                 code = secrets.token_urlsafe(12)
@@ -109,9 +133,11 @@ def keyboard(c, uid, key, defaults=None, values=None):
                         time.time() + setting(c, "session_minutes", 30) * 60,
                     ),
                 )
-                item = b(btn["label"], "context:" + code)
+                item = button_style(b(btn["label"], "context:" + code), btn["style"])
             else:
-                item = b(btn["label"], "button:" + str(btn["id"]))
+                item = button_style(
+                    b(btn["label"], "button:" + str(btn["id"])), btn["style"]
+                )
         grid.setdefault(btn["row_num"], []).append(item)
     if m["kind"] == "text":
         return None
@@ -1405,6 +1431,7 @@ def run(stop):
             stop.wait(1)
 
     threading.Thread(target=sender, daemon=True).start()
+    webhook_cleared_for = None
     while not stop.is_set():
         try:
             with db() as c:
@@ -1412,10 +1439,14 @@ def run(stop):
                 offset = setting(c, "poll_offset", 0)
             if not t:
                 runtime.update(status="disconnected")
+                webhook_cleared_for = None
                 stop.wait(2)
                 continue
             if runtime["status"] != "connected":
                 runtime.update(status="connecting")
+            if webhook_cleared_for != t:
+                call(t, "deleteWebhook", {"drop_pending_updates": False})
+                webhook_cleared_for = t
             updates = call(
                 t,
                 "getUpdates",
