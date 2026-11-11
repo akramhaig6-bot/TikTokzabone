@@ -98,6 +98,88 @@ const wait = async (fn) => {
     if (!d.querySelector("#view").textContent.trim())
       throw Error("Empty " + route);
   }
+  click("#nav [data-nav=menus]");
+  await wait(() => d.querySelector("#heading-actions [data-action=go-buttons]"));
+  if (!d.querySelector("#view").textContent.includes("محرر البوت المربوط"))
+    throw Error("Missing connected-bot editor section");
+  click("#heading-actions [data-action=go-buttons]");
+  await wait(
+    () => d.querySelector("#page-heading h1").textContent === "الأزرار والإجراءات",
+  );
+  await wait(() =>
+    [...d.querySelectorAll("#view thead th")].some(
+      (th) => th.textContent === "لون الزر في Telegram",
+    ),
+  );
+  click("#view [data-action=detail]");
+  await wait(() => d.querySelector("#modal [data-action=edit]"));
+  click("#modal [data-action=edit]");
+  await wait(() => d.querySelector('#editor [name="style"]'));
+  if (!d.querySelector("#modal-title").textContent.startsWith("تعديل السجل #"))
+    throw Error("Button editor did not open an existing button record");
+  const buttonStyle = d.querySelector('#editor [name="style"]');
+  buttonStyle.value = "primary";
+  d.querySelector("#editor").dispatchEvent(
+    new w.Event("submit", { bubbles: true, cancelable: true }),
+  );
+  await wait(() => d.querySelector("#toast").textContent);
+  if (!d.querySelector("#toast").textContent.includes("تم الحفظ"))
+    throw Error("Button style save failed: " + d.querySelector("#toast").textContent);
+  click("#heading-actions [data-action=create]");
+  await wait(() => d.querySelector('#editor [name="style"]'));
+  d.querySelector('#editor [name="label"]').value = "زر اختبار لون جديد";
+  d.querySelector('#editor [name="action"]').value = "callback";
+  d.querySelector('#editor [name="target"]').value = "home";
+  d.querySelector('#editor [name="style"]').value = "danger";
+  const beforeNewButtonToast = d.querySelector("#toast").textContent;
+  d.querySelector("#editor").dispatchEvent(
+    new w.Event("submit", { bubbles: true, cancelable: true }),
+  );
+  await wait(
+    () =>
+      !d.querySelector("#modal").open ||
+      d.querySelector("#toast").textContent !== beforeNewButtonToast,
+  );
+  if (
+    d.querySelector("#modal").open ||
+    !d.querySelector("#toast").textContent.includes("تم الحفظ")
+  )
+    throw Error("New button style save failed: " + d.querySelector("#toast").textContent);
+
+  click("#nav [data-nav=workflows]");
+  await wait(() => d.querySelector("[data-action=create]"));
+  click("[data-action=create]");
+  await wait(() => d.querySelector("#workflow-editor [data-step-field=validator]"));
+  const validator = d.querySelector(
+    "#workflow-editor [data-step-field=validator]",
+  );
+  validator.value = "choice";
+  validator.dispatchEvent(new w.Event("change", { bubbles: true }));
+  const choices = d.querySelector(
+    '#workflow-editor [data-step-field="choices"]',
+  );
+  choices.value = "موافق|غير موافق";
+  choices.dispatchEvent(new w.Event("change", { bubbles: true }));
+  await wait(
+    () =>
+      d.querySelectorAll("#workflow-editor [data-choice-style]").length === 2,
+  );
+  d.querySelectorAll("#workflow-editor [data-choice-style]")[0].value =
+    "success";
+  d.querySelectorAll("#workflow-editor [data-choice-style]")[1].value =
+    "danger";
+  d.querySelector('#workflow-editor [name="name"]').value =
+    "تدفق اختبار الألوان";
+  const previousToast = d.querySelector("#toast").textContent;
+  d.querySelector("#workflow-editor").dispatchEvent(
+    new w.Event("submit", { bubbles: true, cancelable: true }),
+  );
+  await wait(() => d.querySelector("#toast").textContent !== previousToast);
+  if (!d.querySelector("#toast").textContent.includes("تم حفظ التدفق"))
+    throw Error("Flow button style save failed: " + d.querySelector("#toast").textContent);
+
+  click("#nav [data-nav=settings]");
+  await wait(() => d.querySelector("#settings-form"));
   d.querySelector("#settings-form").dispatchEvent(
     new w.Event("submit", { bubbles: true, cancelable: true }),
   );
