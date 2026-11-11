@@ -31,6 +31,7 @@ def menu_clone(c, mid, key, name, actor):
             "enabled",
             "permission",
             "child_menu",
+            "style",
         ]
         c.execute(
             "INSERT INTO buttons(menu_id,"
