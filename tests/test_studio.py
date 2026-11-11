@@ -78,6 +78,76 @@ class StudioTest(unittest.TestCase):
                 c.execute("SELECT status FROM flow_runs").fetchone()[0], "completed"
             )
 
+    def test_flow_choice_button_styles_reach_telegram_markup(self):
+        fid = self.workflow(
+            [
+                {
+                    "type": "input",
+                    "variable": "answer",
+                    "text": "اختر",
+                    "validator": "choice",
+                    "choices": "نعم|لا",
+                    "choice_styles": ["primary", "danger"],
+                },
+                {"type": "end"},
+            ]
+        )
+        with db() as c:
+            action(c, 123, "workflow:" + str(fid))
+            message = json.loads(
+                c.execute(
+                    "SELECT payload FROM notifications ORDER BY id DESC LIMIT 1"
+                ).fetchone()[0]
+            )
+        buttons = message["data"]["reply_markup"]["inline_keyboard"]
+        self.assertEqual(buttons[0][0]["style"], "primary")
+        self.assertEqual(buttons[1][0]["style"], "danger")
+        self.assertNotIn("style", buttons[-1][0])
+
+    def test_flow_rejects_unknown_button_styles(self):
+        response = self.post(
+            "workflows",
+            {
+                "name": "تدفق غير صالح",
+                "steps": [
+                    {
+                        "type": "input",
+                        "variable": "answer",
+                        "validator": "choice",
+                        "choices": "نعم|لا",
+                        "choice_styles": ["#ff00ff"],
+                    }
+                ],
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_changing_flow_button_color_does_not_reset_active_flow(self):
+        steps = [
+            {
+                "type": "input",
+                "variable": "answer",
+                "text": "اختر",
+                "validator": "choice",
+                "choices": "نعم|لا",
+                "choice_styles": ["default", "default"],
+            },
+            {"type": "end"},
+        ]
+        fid = self.workflow(steps)
+        with db() as c:
+            action(c, 123, "workflow:" + str(fid))
+            revision = one(c, "workflows", fid)["revision"]
+        steps[0]["choice_styles"] = ["success", "danger"]
+        saved = self.post(
+            "workflows", {"id": fid, "name": "اختبار", "steps": steps, "enabled": True}
+        )
+        self.assertEqual(saved.status_code, 200, saved.json)
+        with db() as c:
+            self.assertEqual(one(c, "workflows", fid)["revision"], revision)
+            handle_input(c, 123, "نعم", {})
+            self.assertEqual(one(c, "flow_runs", 1)["status"], "completed")
+
     def test_simulation_rolls_back_everything(self):
         fid = self.workflow(
             [
@@ -110,11 +180,16 @@ class StudioTest(unittest.TestCase):
     def test_clone_menu_and_move_button(self):
         with db() as c:
             m = c.execute("SELECT id FROM menus WHERE key='home'").fetchone()[0]
+            first = c.execute(
+                "SELECT id FROM buttons WHERE menu_id=? ORDER BY id LIMIT 1", (m,)
+            ).fetchone()[0]
+            c.execute("UPDATE buttons SET style='success' WHERE id=?", (first,))
         r = self.post("studio/clone-menu", {"id": m, "key": "home_copy"})
         self.assertEqual(r.status_code, 200, r.json)
         with db() as c:
             bs = rows(c, "SELECT * FROM buttons WHERE menu_id=?", (r.json["id"],))
             self.assertTrue(bs)
+            self.assertEqual(bs[0]["style"], "success")
         self.assertEqual(
             self.post(
                 "studio/move-button", {"id": bs[0]["id"], "direction": "down"}
