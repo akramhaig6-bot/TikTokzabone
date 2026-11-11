@@ -12,6 +12,7 @@ from system.telegram import (
     getstate,
     draft,
     review,
+    keyboard,
 )
 from system.web import create_app, LIMITS
 
@@ -376,6 +377,111 @@ class SystemTest(unittest.TestCase):
             "telegram_token", self.client.get("/api/bootstrap").json["settings"]
         )
 
+    def test_connection_saves_verified_token_if_optional_setup_fails(self):
+        with patch(
+            "system.telegram.call",
+            side_effect=[
+                {"id": 77, "username": "testbot"},
+                RuntimeError("تعذر الوصول إلى api.telegram.org من الخادم."),
+                RuntimeError("رفض Telegram الطلب (رمز 400)."),
+            ],
+        ):
+            r = self.post("connect", {"token": "123:secret"})
+        self.assertEqual(r.status_code, 200, r.json)
+        self.assertEqual(len(r.json["warnings"]), 2)
+        with db() as c:
+            self.assertTrue(setting(c, "telegram_token"))
+
+    def test_api_exceptions_return_json(self):
+        r = self.client.post(
+            "/api/auth/login",
+            data="not-json",
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(r.status_code, 415)
+        self.assertEqual(r.mimetype, "application/json")
+        self.assertTrue(r.json["error"])
+        with patch("system.web.check_password_hash", side_effect=RuntimeError("hidden")):
+            failed_login = self.post(
+                "auth/login",
+                {"username": "owner", "password": "secure-password-123"},
+            )
+        self.assertEqual(failed_login.status_code, 500)
+        self.assertEqual(failed_login.mimetype, "application/json")
+        self.assertNotIn("hidden", failed_login.get_data(as_text=True))
+
+    def test_button_style_is_saved_and_sent_to_inline_and_reply_keyboards(self):
+        with db() as c:
+            inline = c.execute(
+                "INSERT INTO menus(name,key,text,kind) VALUES(?,?,?,'inline')",
+                ("قائمة ملونة", "colored_inline", "اختر"),
+            ).lastrowid
+            c.execute(
+                "INSERT INTO buttons(menu_id,label,action,style) VALUES(?,?,?,?)",
+                (inline, "أخضر", "home", "success"),
+            )
+            c.execute(
+                "INSERT INTO buttons(menu_id,label,action) VALUES(?,?,?)",
+                (inline, "افتراضي", "home"),
+            )
+            c.execute(
+                "INSERT INTO buttons(menu_id,label,kind,action,target,style) VALUES(?,?,'url','none',?,'primary')",
+                (inline, "رابط", "https://example.com"),
+            )
+            c.execute(
+                "INSERT INTO buttons(menu_id,label,kind,action,target,style) VALUES(?,?,'webapp','none',?,'danger')",
+                (inline, "تطبيق ويب", "https://example.com/app"),
+            )
+            reply = c.execute(
+                "INSERT INTO menus(name,key,text,kind) VALUES(?,?,?,'reply')",
+                ("قائمة رد", "colored_reply", "اختر"),
+            ).lastrowid
+            c.execute(
+                "INSERT INTO buttons(menu_id,label,action,style) VALUES(?,?,?,?)",
+                (reply, "أحمر", "home", "danger"),
+            )
+            inline_markup = keyboard(c, 123, "colored_inline")
+            reply_markup = keyboard(c, 123, "colored_reply")
+        inline_buttons = inline_markup["inline_keyboard"][0]
+        self.assertEqual(inline_buttons[0]["style"], "success")
+        self.assertNotIn("style", inline_buttons[1])
+        self.assertEqual(inline_buttons[2]["style"], "primary")
+        self.assertEqual(inline_buttons[3]["style"], "danger")
+        self.assertEqual(reply_markup["keyboard"][0][0]["style"], "danger")
+
+    def test_button_style_crud_rejects_unsupported_values(self):
+        with db() as c:
+            menu_id = c.execute(
+                "SELECT id FROM menus WHERE key='home'"
+            ).fetchone()[0]
+        result = self.post(
+            "data/buttons",
+            {
+                "menu_id": menu_id,
+                "label": "زر ملون",
+                "action": "none",
+                "style": "primary",
+            },
+        )
+        self.assertEqual(result.status_code, 200, result.json)
+        saved = self.client.get("/api/data/buttons").json["items"]
+        self.assertEqual(
+            next(button for button in saved if button["id"] == result.json["id"])[
+                "style"
+            ],
+            "primary",
+        )
+        invalid = self.post(
+            "data/buttons",
+            {
+                "menu_id": menu_id,
+                "label": "لون غير مدعوم",
+                "action": "none",
+                "style": "#ff00ff",
+            },
+        )
+        self.assertEqual(invalid.status_code, 400)
+
     def test_broadcast_real_queue_and_lifecycle(self):
         r = self.post(
             "data/broadcasts", {"body": "Hello", "kind": "text", "audience": "active"}
@@ -574,6 +680,18 @@ class SystemTest(unittest.TestCase):
             self.assertEqual(one(c, "services", 1)["price"], 100)
         with self.assertRaises(ValueError):
             migrate(old_path)
+
+    def test_button_style_migrates_existing_database(self):
+        with db() as c:
+            c.execute("ALTER TABLE buttons DROP COLUMN style")
+        store.init()
+        with db() as c:
+            columns = {row[1] for row in c.execute("PRAGMA table_info(buttons)")}
+            self.assertIn("style", columns)
+            self.assertEqual(
+                c.execute("SELECT style FROM buttons ORDER BY id LIMIT 1").fetchone()[0],
+                "default",
+            )
 
     def test_precheckout_blocks_cancel_but_allows_paid_credit(self):
         from system.telegram import precheckout
