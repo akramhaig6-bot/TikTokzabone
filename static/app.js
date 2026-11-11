@@ -27,7 +27,7 @@ const labels = {
   support: "الدعم الفني",
   tickets: "تذاكر الدعم",
   broadcasts: "الإذاعة",
-  menus: "القوائم والرسائل",
+  menus: "محرر البوت المربوط",
   buttons: "الأزرار والإجراءات",
   staff: "الأدمنية والصلاحيات",
   settings: "إعدادات البوت",
@@ -108,6 +108,7 @@ const fields = {
   key: "المعرّف البرمجي للقائمة",
   text: "نص الرسالة (يدعم المتغيرات بين { })",
   kind: "النوع",
+  style: "لون الزر في Telegram",
   menu_id: "رقم القائمة",
   label: "اسم الزر",
   action: "الإجراء",
@@ -207,6 +208,10 @@ const names = {
   topups: "طلبات شحن الزبون",
   admin: "فتح الإدارة (يتطلب صلاحية)",
   none: "الرئيسية",
+  primary: "Primary — أزرق",
+  success: "Success — أخضر",
+  danger: "Danger — أحمر",
+  default: "Default — افتراضي",
 };
 const currencyFields = [
   "price",
@@ -251,11 +256,15 @@ async function api(path, data) {
     headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
     body: data === undefined ? undefined : JSON.stringify(data),
   });
+  const raw = await r.text();
   let out;
   try {
-    out = await r.json();
+    out = raw ? JSON.parse(raw) : {};
   } catch {
-    throw Error("تعذر قراءة استجابة الخادم");
+    const status = `${r.status}${r.statusText ? " " + r.statusText : ""}`;
+    throw Error(
+      `أعاد الخادم استجابة غير متوقعة (${status}) بدل JSON. تحقق من سجلات التشغيل وإعدادات النشر.`,
+    );
   }
   if (!r.ok) throw Error(out.error || "تعذر تنفيذ العملية");
   return out;
@@ -457,7 +466,7 @@ const columns = {
   tickets: ["id", "subject", "user_id", "status", "updated"],
   staff: ["id", "username", "telegram_id", "permissions", "enabled"],
   menus: ["id", "name", "key", "kind"],
-  buttons: ["id", "label", "menu_id", "action", "row_num", "col_num"],
+  buttons: ["id", "label", "menu_id", "action", "style", "row_num", "col_num"],
   ledger: ["id", "user_id", "delta", "reason", "after_balance", "created"],
   audit: ["id", "actor", "action", "entity", "created"],
   broadcasts: ["id", "body", "audience", "status", "created"],
@@ -478,6 +487,10 @@ async function listView() {
   const r = await api(url);
   if (seq !== requestSeq || table !== tableName()) return;
   items = r.items;
+  const botEditorBanner =
+    table === "menus"
+      ? `<div class="notice"><strong>محرر البوت المربوط</strong><br>${boot.connected ? `التوكن مربوط بـ ${boot.bot_identity?.username ? "@" + esc(boot.bot_identity.username) : "البوت"} — الحالة: ${esc(names[boot.runtime.status] || boot.runtime.status)}. الألوان المحفوظة تُرسل ضمن لوحات Telegram عند الرسائل والتفاعلات التالية؛ لا تتغير الرسائل القديمة تلقائيًا.` : `لا يوجد توكن مربوط حاليًا. اربط البوت من إعدادات البوت لعرض أزراره للمستخدمين في Telegram. ${btn("إعدادات الربط", "go-settings")}`}</div>`
+      : "";
   const create =
     boot.schemas[table] || ["staff", "expenses", "workflows"].includes(table);
   $("#heading-actions").innerHTML =
@@ -529,7 +542,7 @@ async function listView() {
     }[table] || [];
   const cols = columns[table] || ["id"];
   $("#view").innerHTML =
-    `<div class="card"><form id="search" class="toolbar"><input name="q" placeholder="⌕  ابحث برقم السجل أو الاسم أو أي بيانات…" value="${esc(query)}">${states.length ? `<select name="status" aria-label="تصفية الحالة"><option value="">جميع الحالات</option>${states.map((s) => `<option value="${s}" ${filter === s ? "selected" : ""}>${names[s]}</option>`).join("")}</select>` : ""}${table === "expenses" ? `<label>من<input type="date" name="start" value="${esc(expenseStart)}"></label><label>إلى<input type="date" name="end" value="${esc(expenseEnd)}"></label>` : ""}<button class="secondary" type="submit">بحث وتصفية</button><span class="count">${r.total} سجل</span></form><div class="table-scroll"><table><thead><tr>${cols.map((c) => `<th>${fields[c] || c}</th>`).join("")}<th>الإجراءات</th></tr></thead><tbody>${items.map((row, i) => `<tr>${cols.map((c) => `<td>${c === "id" ? `<span class="code">${esc(({ orders: "TK-", topups: "TOP-", tickets: "SUP-", inventory: "ACC-", ledger: "LED-" }[table] || "#") + String(row.id).padStart(5, "0"))}</span>` : c === "name" || c === "service_name" ? "<strong>" + fmt(c, row[c]) + "</strong>" : fmt(c, typeof row[c] === "string" && row[c].length > 65 && c !== "permissions" ? row[c].slice(0, 65) + "…" : row[c])}</td>`).join("")}<td>${btn("فتح ←", "detail", `data-index="${i}"`, "link-btn")}</td></tr>`).join("")}</tbody></table></div>${!items.length ? '<div class="empty"><span class="empty-icon">▧</span>لا توجد سجلات بعد<br><small>ستظهر البيانات الفعلية هنا عند بدء استخدام النظام.</small></div>' : ""}<div class="pager"><span>صفحة ${r.page} من ${r.pages} · ${r.total} سجل</span><div class="actions">${btn("السابق", "prev", page === 1 ? "disabled" : "")}${btn("التالي", "next", page >= r.pages ? "disabled" : "")}</div></div></div>${table === "menus" ? '<div class="notice">يمكنك تعديل جميع النصوص والقوائم هنا. قوالب شاشات التدفقات مجهّزة مسبقًا وقابلة للتعديل. احتفظ بأسماء المتغيرات بين الأقواس. الأزرار ثابتة الهوية وقابلة لتغيير النص والترتيب والوجهة من إدارة الأزرار.</div>' : ""}`;
+    `${botEditorBanner}<div class="card"><form id="search" class="toolbar"><input name="q" placeholder="⌕  ابحث برقم السجل أو الاسم أو أي بيانات…" value="${esc(query)}">${states.length ? `<select name="status" aria-label="تصفية الحالة"><option value="">جميع الحالات</option>${states.map((s) => `<option value="${s}" ${filter === s ? "selected" : ""}>${names[s]}</option>`).join("")}</select>` : ""}${table === "expenses" ? `<label>من<input type="date" name="start" value="${esc(expenseStart)}"></label><label>إلى<input type="date" name="end" value="${esc(expenseEnd)}"></label>` : ""}<button class="secondary" type="submit">بحث وتصفية</button><span class="count">${r.total} سجل</span></form><div class="table-scroll"><table><thead><tr>${cols.map((c) => `<th>${fields[c] || c}</th>`).join("")}<th>الإجراءات</th></tr></thead><tbody>${items.map((row, i) => `<tr>${cols.map((c) => `<td>${c === "id" ? `<span class="code">${esc(({ orders: "TK-", topups: "TOP-", tickets: "SUP-", inventory: "ACC-", ledger: "LED-" }[table] || "#") + String(row.id).padStart(5, "0"))}</span>` : c === "name" || c === "service_name" ? "<strong>" + fmt(c, row[c]) + "</strong>" : fmt(c, typeof row[c] === "string" && row[c].length > 65 && c !== "permissions" ? row[c].slice(0, 65) + "…" : row[c])}</td>`).join("")}<td>${btn("فتح ←", "detail", `data-index="${i}"`, "link-btn")}</td></tr>`).join("")}</tbody></table></div>${!items.length ? '<div class="empty"><span class="empty-icon">▧</span>لا توجد سجلات بعد<br><small>ستظهر البيانات الفعلية هنا عند بدء استخدام النظام.</small></div>' : ""}<div class="pager"><span>صفحة ${r.page} من ${r.pages} · ${r.total} سجل</span><div class="actions">${btn("السابق", "prev", page === 1 ? "disabled" : "")}${btn("التالي", "next", page >= r.pages ? "disabled" : "")}</div></div></div>${table === "menus" ? '<div class="notice">اختر قائمة لعرض أزرارها، أو افتح «الأزرار» لتعديل ألوان كل زر وإجراءاته. التغييرات تصل إلى بوت Telegram عند إرسال اللوحة التالية.</div>' : ""}`;
   $("#search select")?.classList.add("search-select");
 }
 function modal(title, body) {
@@ -543,7 +556,14 @@ function inputField(k, typ, val, full = false) {
   if (typ === "money" && val !== undefined) value = Number(val) / 100;
   if (typ === "bool")
     return `<label class="check"><input type="checkbox" name="${k}" ${value ? "checked" : ""}>${fields[k] || k}</label>`;
-  if (["layout_key", "child_menu"].includes(k))
+  if (k === "menu_id")
+    html = `<select name="${k}"><option value="">اختر القائمة</option>${(boot.menus || [])
+      .map(
+        (m) =>
+          `<option value="${m.id}" ${Number(value) === Number(m.id) ? "selected" : ""}>${esc(m.name)} — ${esc(m.key)}</option>`,
+      )
+      .join("")}</select>`;
+  else if (["layout_key", "child_menu"].includes(k))
     html = `<select name="${k}"><option value="">افتراضي / دون تخصيص</option>${(boot.menus || []).map((m) => `<option value="${esc(m.key)}" ${value === m.key ? "selected" : ""}>${esc(m.name)} — ${esc(m.key)}</option>`).join("")}</select>`;
   else if (k === "language")
     html = `<select name="language">${(boot.locales || [])
@@ -586,11 +606,16 @@ function editor(record = {}) {
           position: 0,
         },
         buttons: {
+          menu_id:
+            boot.menus?.find((m) => m.key === "home")?.id ??
+            boot.menus?.[0]?.id ??
+            "",
           row_num: 0,
           col_num: 0,
           enabled: 1,
           action: "message",
           kind: "callback",
+          style: "default",
         },
         menus: { kind: "inline" },
         inventory: { status: "available" },
@@ -1291,12 +1316,16 @@ document.addEventListener("submit", async (e) => {
         settings();
       }
     } else if (form.id === "connect") {
-      await api("connect", d);
+      const result = await api("connect", d);
       form.reset();
       boot = await api("bootstrap");
       connection();
       settings();
-      toast("تم التحقق من البوت وحفظ الربط");
+      toast(
+        result.warnings?.length
+          ? `تم حفظ ربط البوت؛ تعذر إكمال إعداد إضافي: ${result.warnings.join(" ")}`
+          : "تم التحقق من البوت وحفظ الربط",
+      );
     } else if (form.id === "reply-form") {
       await perform("reply", { id: activeRecord.id, body: d.body });
     }

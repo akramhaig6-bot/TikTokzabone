@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import date, datetime
 from flask import Flask, request, session, jsonify, send_from_directory, Response
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.exceptions import HTTPException
 from cryptography.fernet import Fernet
 from . import store
 from .store import *
@@ -52,6 +53,7 @@ SCHEMAS = {
         "enabled": "bool",
         "permission": "text",
         "child_menu": "text",
+        "style": "primary|success|danger|default",
     },
     "locales": {"code": "text", "name": "text", "enabled": "bool"},
     "translations": {"locale": "text", "token": "text", "text": "text"},
@@ -199,6 +201,19 @@ def create_app():
     @app.errorhandler(404)
     def missing(e):
         return jsonify(error="المسار غير موجود"), 404
+
+    @app.errorhandler(Exception)
+    def unexpected(e):
+        if isinstance(e, HTTPException):
+            if request.path.startswith("/api/"):
+                return jsonify(error=e.description), e.code
+            return e
+        app.logger.error(
+            "Unhandled request error (%s) on %s", type(e).__name__, request.path
+        )
+        if request.path.startswith("/api/"):
+            return jsonify(error="حدث خطأ داخلي في الخادم. راجع سجلات التشغيل."), 500
+        return "حدث خطأ داخلي في الخادم.", 500
 
     @app.get("/")
     def index():
@@ -420,6 +435,7 @@ def create_app():
                 )
             }
             connected = bool(setting(c, "telegram_token"))
+            bot_identity = setting(c, "bot_identity", {})
             menu_options = (
                 rows(c, "SELECT id,key,name,kind,layout_key FROM menus ORDER BY id")
                 if allowed(request.actor, "menus")
@@ -442,6 +458,11 @@ def create_app():
                 else {"brand": settings["brand"]}
             ),
             connected=connected,
+            bot_identity={
+                key: bot_identity.get(key)
+                for key in ("id", "username", "first_name")
+                if key in bot_identity
+            },
             menus=menu_options,
             locales=locales,
             services=service_options,
@@ -498,13 +519,22 @@ def create_app():
             if data.get("id"):
                 old = one(c, "workflows", data["id"])
                 fid = old["id"]
+                previous_steps = json.loads(old["steps"])
+                previous_logic = [
+                    {key: value for key, value in step.items() if key != "choice_styles"}
+                    for step in previous_steps
+                ]
+                current_logic = [
+                    {key: value for key, value in step.items() if key != "choice_styles"}
+                    for step in steps
+                ]
                 c.execute(
                     "UPDATE workflows SET name=?,enabled=?,steps=?,revision=revision+?,updated=? WHERE id=?",
                     (
                         data["name"],
                         int(bool(data.get("enabled", True))),
                         json.dumps(steps, ensure_ascii=False),
-                        int(json.loads(old["steps"]) != steps),
+                        int(previous_logic != current_logic),
                         now(),
                         fid,
                     ),
@@ -1174,9 +1204,21 @@ def create_app():
             raise ValueError("أدخل توكن Telegram صحيحًا")
         try:
             me = call(value, "getMe", {})
-            call(value, "deleteWebhook", {"drop_pending_updates": False})
-            call(
-                value,
+        except Exception as e:
+            app.logger.warning(
+                "Telegram token verification failed (%s)", type(e).__name__
+            )
+            message = (
+                str(e)
+                if isinstance(e, RuntimeError)
+                else "تعذر التحقق من Telegram. تحقق من التوكن واتصال الخادم دون مشاركة التوكن."
+            )
+            return jsonify(error=message), 502
+
+        warnings = []
+        for method, data in [
+            ("deleteWebhook", {"drop_pending_updates": False}),
+            (
                 "setMyCommands",
                 {
                     "commands": [
@@ -1184,14 +1226,21 @@ def create_app():
                         {"command": "paysupport", "description": "دعم المدفوعات"},
                     ]
                 },
-            )
-        except Exception:
-            return (
-                jsonify(
-                    error="تعذر التحقق من Telegram. تحقق من التوكن واتصال الخادم دون مشاركة التوكن."
-                ),
-                502,
-            )
+            ),
+        ]:
+            try:
+                call(value, method, data)
+            except Exception as e:
+                app.logger.warning(
+                    "Telegram setup method %s failed (%s)",
+                    method,
+                    type(e).__name__,
+                )
+                warnings.append(
+                    str(e)
+                    if isinstance(e, RuntimeError)
+                    else "تعذر إكمال إعداد اختياري في Telegram."
+                )
         with db() as c:
             old = setting(c, "bot_identity", {})
             put(c, "telegram_token", cipher().encrypt(value.encode()).decode())
@@ -1205,6 +1254,6 @@ def create_app():
                 me["id"],
                 {"username": me.get("username")},
             )
-        return jsonify(ok=True, bot=me)
+        return jsonify(ok=True, bot=me, warnings=warnings)
 
     return app

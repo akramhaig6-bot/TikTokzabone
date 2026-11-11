@@ -24,6 +24,7 @@ def validate_steps(steps):
             "min",
             "max",
             "choices",
+            "choice_styles",
             "equals",
             "yes",
             "no",
@@ -34,6 +35,20 @@ def validate_steps(steps):
                 not isinstance(step[key], str) or len(step[key]) > 4000
             ):
                 raise ValueError("محتوى خطوة غير صالح")
+        if "choice_styles" in step:
+            styles = step["choice_styles"]
+            choices = step.get("choices", "").split("|")
+            if (
+                step["type"] != "input"
+                or step.get("validator") != "choice"
+                or not isinstance(styles, list)
+                or len(styles) > len(choices)
+                or any(
+                    style not in ("default", "primary", "success", "danger")
+                    for style in styles
+                )
+            ):
+                raise ValueError("ألوان أزرار التدفق غير صالحة")
         if step["type"] == "input":
             if not re.fullmatch(
                 r"[A-Za-z][A-Za-z0-9_]{0,39}", step.get("variable", "")
@@ -78,7 +93,7 @@ def start(c, uid, fid):
 
 
 def advance(c, uid, rid, value=None):
-    from .telegram import state, action, say, keyboard
+    from .telegram import state, action, say, keyboard, button_style
 
     run = one(c, "flow_runs", rid)
     if run["user_id"] != uid or run["status"] != "active":
@@ -133,14 +148,21 @@ def advance(c, uid, rid, value=None):
                 (index, json.dumps(variables), now(), rid),
             )
             state(c, uid, "workflow", {"run_id": rid})
-            buttons = (
-                [
-                    [{"text": v, "callback_data": f"flow_choice:{rid}:{i}"}]
-                    for i, v in enumerate(step.get("choices", "").split("|"))
+            buttons = []
+            if step.get("validator") == "choice":
+                styles = step.get("choice_styles", [])
+                buttons = [
+                    [
+                        button_style(
+                            {
+                                "text": choice,
+                                "callback_data": f"flow_choice:{rid}:{i}",
+                            },
+                            styles[i] if i < len(styles) else "default",
+                        )
+                    ]
+                    for i, choice in enumerate(step.get("choices", "").split("|"))
                 ]
-                if step.get("validator") == "choice"
-                else []
-            )
             buttons += [
                 [
                     {"text": "❌ إلغاء التدفق", "callback_data": f"flow_cancel:{rid}"},
